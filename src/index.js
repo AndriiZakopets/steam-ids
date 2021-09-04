@@ -24,7 +24,7 @@ for (const name of names) {
   if (!isSaved) {
     const id = await getItemNameid(name);
     console.log(name, id);
-    axios.get(`http://localhost:${process.env.PORT}`);
+    axios.get(`https://steamids-parse.herokuapp.com/`);
 
     const item = new Item({
       market_hash_name: name,
