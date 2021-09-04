@@ -1,7 +1,7 @@
 import axios from 'axios';
 import rateLimit from 'axios-rate-limit';
 console.log('import api');
-const limitedAxios = rateLimit(axios.create(), { maxRequests: 1, perMilliseconds: 30000 });
+const limitedAxios = rateLimit(axios.create(), { maxRequests: 1, perMilliseconds: 90000 });
 
 export function getPage(name) {
   return limitedAxios.get(`https://steamcommunity.com/market/listings/730/${name}`);
