@@ -1,13 +1,12 @@
 import mongoose from 'mongoose';
 import fs from 'fs';
-import { getItemsBitskins } from './api.js';
+// import { getItemsBitskins } from './api.js';
 import { Item } from './models.js';
 import { getItemNameid } from './lib.js';
 
 mongoose.connect('mongodb+srv://admin:admin@cluster0.voepl.mongodb.net/items');
-const code = process.argv[2];
 
-// const resp = await getItemsBitskins(code);
+// const resp = await getItemsBitskins('123456');
 // const prices = resp.data.prices;
 // const names = prices.map(({ market_hash_name }) => market_hash_name);
 const names = JSON.parse(fs.readFileSync('names.json').toString());
