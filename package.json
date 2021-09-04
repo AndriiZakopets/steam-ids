@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon src/"
+    "start": "node src/"
   },
   "author": "Andrii Zakopets",
   "license": "ISC",
