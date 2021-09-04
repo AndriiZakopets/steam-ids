@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import express from 'express';
+import axios from 'axios'
 import fs from 'fs';
 // import { getItemsBitskins } from './api.js';
 import { Item } from './models.js';
@@ -23,6 +24,7 @@ for (const name of names) {
   if (!isSaved) {
     const id = await getItemNameid(name);
     console.log(name, id);
+    axios.get(`http://localhost:${process.env.PORT}`);
 
     const item = new Item({
       market_hash_name: name,
