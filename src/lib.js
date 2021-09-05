@@ -2,10 +2,14 @@ import { getPage } from './api.js';
 import { Item } from './models.js';
 
 export async function getItemNameid(marketHashName) {
-  const page = await getPage(marketHashName);
-  const re = /Market_LoadOrderSpread\(\s*(\d+)\s*\)/;
-  const id = page.data.match(re)[0].match(/\d+/)[0];
-  return id;
+  try {
+    const page = await getPage(marketHashName);
+    const re = /Market_LoadOrderSpread\(\s*(\d+)\s*\)/;
+    const id = page.data.match(re)[0].match(/\d+/)[0];
+    return id;
+  } catch (e) {
+    return '';
+  }
 }
 
 export function createItemModel(item) {
