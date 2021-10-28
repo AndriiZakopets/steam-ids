@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import express from 'express';
 import fs from 'fs';
-import { ping } from './api.js';
+import { ping, getItemsBitskins } from './api.js';
 import { Item } from './models.js';
 import { getItemNameid } from './lib.js';
 
@@ -12,10 +12,10 @@ app.get('/', (req, res) => {
 app.listen(process.env.PORT || 3000);
 mongoose.connect('mongodb+srv://admin:admin@cluster0.voepl.mongodb.net/items');
 
-// const resp = await getItemsBitskins('123456');
-// const prices = resp.data.prices;
-// const names = prices.map(({ market_hash_name }) => market_hash_name);
-const names = JSON.parse(fs.readFileSync('names.json').toString());
+const resp = await getItemsBitskins('660991');
+const prices = resp.data.prices;
+const names = prices.map(({ market_hash_name }) => market_hash_name);
+// const names = JSON.parse(fs.readFileSync('names.json').toString());
 
 setInterval(ping, +process.env.PING_TIMEOUT || 60000);
 
@@ -23,6 +23,7 @@ for (const name of names) {
   const saved = await Item.find({ market_hash_name: name });
   const isSaved = saved.length > 0;
   if (!isSaved) {
+    await new Promise((res) => setTimeout(res, 2000));
     const id = await getItemNameid(name);
     console.log(name, id);
     const item = new Item({
@@ -31,6 +32,7 @@ for (const name of names) {
     });
     await item.save();
   } else if (saved[0].item_nameid === '') {
+    await new Promise((res) => setTimeout(res, 2000));
     const id = await getItemNameid(name);
     console.log(name, id);
     await Item.findOneAndUpdate(
