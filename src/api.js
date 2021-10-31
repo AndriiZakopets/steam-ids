@@ -2,6 +2,7 @@ import axios from 'axios';
 import proxyAxios from './proxyAxios.js';
 import rateLimit from 'axios-rate-limit';
 import fs from 'fs';
+const API_KEY = 'n2rU8267ethbo4LKcd3vibKhSL6gwNA';
 
 console.log('import api');
 const limitedAxios = rateLimit(axios.create(), {
@@ -61,17 +62,19 @@ const getSteamApiPage = async function (start = 0, count = 100) {
   return response.data;
 };
 
-const sleep = async (ms = 1000) => {
+export const sleep = async (ms = 1000) => {
   return await new Promise((res) => setTimeout(res, ms));
 };
 
-const retry = async function retry(callback, ...args) {
+export const retry = async function retry(callback, args, attempts = 5, timeout = 15000) {
+  if (attempts === 0) return callback(...args);
+
   try {
     return await callback(...args);
   } catch (e) {
     console.log('retry');
-    await sleep(15000);
-    return retry(callback, ...args);
+    await sleep(timeout);
+    return retry(callback, args, attempts - 1, timeout);
   }
 };
 
@@ -84,7 +87,7 @@ export const getSteamPrices = async (count = 1000) => {
     const pageSize = leftToParse > 100 ? 100 : leftToParse;
     const start = count - leftToParse;
     leftToParse -= pageSize;
-    promiseArray.push(retry(getSteamApiPage, start, pageSize));
+    promiseArray.push(retry(getSteamApiPage, [start, pageSize]));
   }
 
   const resultsArr = await Promise.all(promiseArray);
@@ -98,5 +101,26 @@ export const getSteamPrices = async (count = 1000) => {
   return items;
 };
 
-export const getPricesClassInstance = () =>
-  axios.get('https://market.csgo.com/api/v2/prices/class_instance/RUB.json');
+export const getPricesClassInstance = () => {
+  return axios.get('https://market.csgo.com/api/v2/prices/class_instance/RUB.json');
+};
+
+export const getMassInfo = (itemArray, SELL = 0, BUY = 0, HISTORY = 0, INFO = 0) =>
+  proxyAxios(`https://market.csgo.com/api/MassInfo/${SELL}/${BUY}/${HISTORY}/${INFO}?key=${API_KEY}`, {
+    data: {
+      list: itemArray.reduce(
+        (prev, curr, i) => `${prev}${i ? ',' : ''}${curr.classid}_${curr.instanceid}`,
+        ''
+      ),
+    },
+  }, 'post');
+
+export const buy = ({ classid, instanceid }, price, hash = '') =>
+  axios.get(`https://market.csgo.com/api/Buy/${classid}_${instanceid}/${price}/${hash}/`, {
+    params: { key: API_KEY },
+  });
+
+export const getPriceOverview = (market_hash_name) =>
+  proxyAxios(`https://steamcommunity.com/market/priceoverview/`, {
+    params: { market_hash_name, appid: 730, currency: 18 },
+  });

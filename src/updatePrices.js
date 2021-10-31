@@ -1,5 +1,5 @@
 import './db.js';
-import { getPrices, getSteamPrices, getPricesClassInstance } from './api.js';
+import { getPrices, getSteamPrices, getPricesClassInstance, retry } from './api.js';
 import { Item, Price } from './models.js';
 
 const idMap = {};
@@ -8,7 +8,7 @@ itemsIds.forEach(({ market_hash_name, item_nameid }) => {
   idMap[market_hash_name] = item_nameid;
 });
 
-const steamPrices = await getSteamPrices(2000);
+const steamPrices = await getSteamPrices(parseInt(process.argv[2] || '1000'));
 
 function getTs() {
   return new Date();
@@ -25,8 +25,8 @@ for (let i = 0; i < steamPrices.length; i++) {
   const timeout = i * delay - fromStart;
   await new Promise((res) => setTimeout(res, timeout > 0 ? timeout : 0));
   const name = steamPrices[i].hash_name;
-  const promise = getPrices(name, idMap[name])
-    .then(async ({ data: prices }) => {
+  const promise = retry(getPrices, [name, idMap[name]], 2, 5000);
+  promise.then(async ({ data: prices }) => {
       console.log(`${i}. ${fromStart / 1000} ${name}: ${prices.buy_order_price}`);
       steam[name] = parseInt(prices.highest_buy_order);
     })
@@ -73,11 +73,11 @@ for (const item of arr) {
     csgotmAveragePrice: item.avg_price / 100,
     rate: (0.95 * item.avg_price) / steam[item.market_hash_name],
     popularity: item.popularity_7d,
-    class_instance: item.class_instance,
+    classInstance: item.class_instance,
     steamLink: `https://steamcommunity.com/market/listings/730/${item.market_hash_name}`,
     csgotmLink: `https://market.csgo.com/item/${item.class_instance.split('_').join('-')}`
   });
-  const save = await price.save();
+  const save = price.save();
   saveArray.push(save);
 }
 
