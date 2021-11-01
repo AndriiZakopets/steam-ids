@@ -5,6 +5,7 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
+    "start": "node src/autobuy/test.js",
     "get-list": "node src/updatePrices.js",
     "update-ids": "node src/updateIds.js",
     "autobuy": "node src/autobuy/index.js"
