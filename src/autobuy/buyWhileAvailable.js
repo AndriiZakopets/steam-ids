@@ -19,7 +19,7 @@ export const buyWhileAvailable = async (item, maxRate, maxPrice) => {
       }
 
       for (let i = 0; i < offer[1]; i++) {
-        const { data: response } = await buy(item, offer[0]);
+        const response = await buy(item, offer[0]);
 
         if (response.result === 'ok') {
           console.log(item.info.market_hash_name, rate, offer[0] / 100, response);

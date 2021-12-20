@@ -1,7 +1,7 @@
 import { getPricesClassInstance } from '../api.js';
 
 export const getList = async (size = 200, maxPrice) => {
-  const { data: prices } = await getPricesClassInstance();
+  const prices = await getPricesClassInstance();
   const table = [];
   const list = new Array(size);
 

@@ -9,7 +9,7 @@ const limitedGetPriceOverview = limiter.wrap((name) => getPriceOverview(name));
 const retryPriceOverview = async function repeat(callback, name) {
   console.log(`getting price for ${name}`);
   try {
-    const { data: response } = await callback(name);
+    const response = await callback(name);
 
     if (!(response.success && response.lowest_price && response.volume && response.median_price))
       throw 1;

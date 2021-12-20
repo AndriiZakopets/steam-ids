@@ -5,7 +5,7 @@ export async function getItemNameid(marketHashName) {
   try {
     const page = await getPage(marketHashName);
     const re = /Market_LoadOrderSpread\(\s*(\d+)\s*\)/;
-    const id = page.data.match(re)[0].match(/\d+/)[0];
+    const id = page.match(re)[0].match(/\d+/)[0];
     return id;
   } catch (e) {
     return '';

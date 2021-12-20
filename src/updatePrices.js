@@ -26,7 +26,7 @@ for (let i = 0; i < steamPrices.length; i++) {
   await new Promise((res) => setTimeout(res, timeout > 0 ? timeout : 0));
   const name = steamPrices[i].hash_name;
   const promise = retry(getPrices, [name, idMap[name]], 2, 5000);
-  promise.then(async ({ data: prices }) => {
+  promise.then(async (prices) => {
       console.log(`${i}. ${fromStart / 1000} ${name}: ${prices.buy_order_price}`);
       steam[name] = parseInt(prices.highest_buy_order);
     })
@@ -42,7 +42,7 @@ for (let i = 0; i < steamPrices.length; i++) {
 
 await Promise.allSettled(promiseArr);
 
-const { data: response } = await getPricesClassInstance();
+const response = await getPricesClassInstance();
 console.log('cstm done.');
 const arr = [];
 for (const class_instance in response.items) {

@@ -1,27 +1,33 @@
 import axios from 'axios';
-import proxyAxios from './proxyAxios.js';
+import dotenv from 'dotenv';
+import querystring from 'querystring';
 import rateLimit from 'axios-rate-limit';
-import fs from 'fs';
-const API_KEY = 'n2rU8267ethbo4LKcd3vibKhSL6gwNA';
+import proxyInterceptor, { proxyCount } from './proxy.js';
+import { sleep } from './helpers.js';
+dotenv.config();
+const { API_KEY } = process.env;
 
 console.log('import api');
-const limitedAxios = rateLimit(axios.create(), {
-  maxRequests: 1,
-  perMilliseconds: +process.env.REQUEST_TIMEOUT || 20000,
+
+const proxyAxios = axios.create();
+proxyAxios.interceptors.request.use(proxyInterceptor);
+const request = rateLimit(proxyAxios, {
+  maxRequests: proxyCount,
+  perMilliseconds: +process.env.REQUEST_TIMEOUT || 1000,
 });
 
 export function getPage(name) {
-  return proxyAxios(`https://steamcommunity.com/market/listings/730/${encodeURI(name)}`);
+  return request.get(`https://steamcommunity.com/market/listings/730/${encodeURI(name)}`).then(({data}) => data);
 }
 
 export function getItemsBitskins(code) {
-  return axios.get(
+  return request.get(
     `https://bitskins.com/api/v1/get_all_item_prices/?api_key=d5c0b0d8-3662-4efc-9351-4da9e56de438&app_id=730&code=${code}`
-  );
+  ).then(({data}) => data);
 }
 
 export function getPrices(hash_name, item_nameid) {
-  return proxyAxios(
+  return request.get(
     `https://steamcommunity.com/market/itemordershistogram?country=UA&language=russian&currency=18&item_nameid=${item_nameid}&two_factor=0&norender=1`,
     {
       headers: {
@@ -29,18 +35,16 @@ export function getPrices(hash_name, item_nameid) {
         Host: 'steamcommunity.com',
       },
     }
-  );
+  ).then(({data}) => data);
 }
 
 export function ping() {
-  return axios.get(`https://steamids-parse.herokuapp.com/`);
+  return request.get(`https://steamids-parse.herokuapp.com/`).then(({data}) => data);
 }
 
-const Cookie = fs.readFileSync('./src/cookie.txt').toString();
-
 const getSteamApiPage = async function (start = 0, count = 100) {
-  const response = await proxyAxios('https://steamcommunity.com/market/search/render/', {
-    headers: { Cookie },
+  const response = await request.get('https://steamcommunity.com/market/search/render/', {
+    headers: { Cookie: process.env.COOKIE },
     params: {
       count,
       start,
@@ -49,21 +53,17 @@ const getSteamApiPage = async function (start = 0, count = 100) {
       sort_column: 'popular',
       appid: 730,
     },
-  });
+  }).then(({data}) => data);
 
   if (response.status != 200) throw 1;
 
-  const price = response.data.results[0].sell_price_text;
+  const price = response.results[0].sell_price_text;
 
   if (price[price.length - 1] != '₴') {
     throw new Error('Invalid currency (update cookie.txt file)');
   }
 
-  return response.data;
-};
-
-export const sleep = async (ms = 1000) => {
-  return await new Promise((res) => setTimeout(res, ms));
+  return response;
 };
 
 export const retry = async function retry(callback, args, attempts = 5, timeout = 15000) {
@@ -102,25 +102,53 @@ export const getSteamPrices = async (count = 1000) => {
 };
 
 export const getPricesClassInstance = () => {
-  return axios.get('https://market.csgo.com/api/v2/prices/class_instance/RUB.json');
+  return request.get('https://market.csgo.com/api/v2/prices/class_instance/RUB.json').then(({data}) => data);
 };
 
 export const getMassInfo = (itemArray, SELL = 0, BUY = 0, HISTORY = 0, INFO = 0) =>
-  proxyAxios(`https://market.csgo.com/api/MassInfo/${SELL}/${BUY}/${HISTORY}/${INFO}?key=${API_KEY}`, {
-    data: {
-      list: itemArray.reduce(
-        (prev, curr, i) => `${prev}${i ? ',' : ''}${curr.classid}_${curr.instanceid}`,
-        ''
-      ),
-    },
-  }, 'post');
+  request.post(
+    `https://market.csgo.com/api/MassInfo/${SELL}/${BUY}/${HISTORY}/${INFO}?key=${API_KEY}`,
+    {
+      data: querystring.stringify({
+        list: itemArray.reduce(
+          (prev, curr, i) => `${prev}${i ? ',' : ''}${curr.classid}_${curr.instanceid}`,
+          ''
+        ),
+      }),
+    }
+  ).then(({data}) => data);
 
 export const buy = ({ classid, instanceid }, price, hash = '') =>
-  axios.get(`https://market.csgo.com/api/Buy/${classid}_${instanceid}/${price}/${hash}/`, {
+  request.get(`https://market.csgo.com/api/Buy/${classid}_${instanceid}/${price}/${hash}/`, {
     params: { key: API_KEY },
-  });
+  }).then(({data}) => data);
 
 export const getPriceOverview = (market_hash_name) =>
-  proxyAxios(`https://steamcommunity.com/market/priceoverview/`, {
+  request.get(`https://steamcommunity.com/market/priceoverview/`, {
     params: { market_hash_name, appid: 730, currency: 18 },
-  });
+  }).then(({data}) => data);
+
+export const getItems = () =>
+  request.get(`https://market.csgo.com/api/v2/items/`, {
+    params: { key: API_KEY },
+  }).then(({data}) => data);
+
+export const getSellOffers = ({ classid, instanceid }) =>
+  request.get(`https://market.csgo.com/api/SellOffers/${classid}_${instanceid}/`, {
+    params: { key: API_KEY },
+  }).then(({data}) => data);
+
+export const getMyInventory = () =>
+  request.get(`https://market.csgo.com/api/v2/my-inventory/`, {
+    params: { key: API_KEY },
+  }).then(({data}) => data);
+
+export const addToSale = (id, price, cur) =>
+  request.get(`https://market.csgo.com/api/v2/add-to-sale/`, {
+    params: { id, price, cur, key: API_KEY },
+  }).then(({data}) => data);
+
+export const setPrice = (item_id, price, cur) =>
+  request.get(`https://market.csgo.com/api/v2/set-price/`, {
+    params: { item_id, price, cur, key: API_KEY },
+  }).then(({data}) => data);

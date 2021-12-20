@@ -10,7 +10,7 @@ export const extMassInfo = async (list, SELL, BUY, HISTORY, INFO) => {
   let result = [];
 
   for (const subArr of splittedList) {
-    const { data: massInfo } = await getMassInfo(subArr, SELL, BUY, HISTORY, INFO);
+    const massInfo = await getMassInfo(subArr, SELL, BUY, HISTORY, INFO);
     result = result.concat(massInfo.results);
   }
 
