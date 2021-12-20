@@ -10,7 +10,7 @@
     "update-ids": "node src/updateIds.js",
     "autobuy": "node src/autobuy/index.js",
     "notify": "node src/notification.js",
-    "sell": "node src/update_sell_price.js"
+    "sell": "node src/sell.js"
   },
   "author": "Andrii Zakopets",
   "license": "ISC",
